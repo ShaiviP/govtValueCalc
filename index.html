@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Calculator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f7edd5;
+      }
+      h1 {
+        text-align: center;
+      }
+      .container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+      }
+      .row {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 10px;
+      }
+      .label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .textfield {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .button {
+        
+        display: inline-block;
+        outline: none;
+        cursor: pointer;
+        border-radius: 3px;
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 16px;
+        padding: 2px 16px;
+        height: 38px;
+        min-width: 96px;
+        min-height: 38px;
+        border: none;
+        color: #fff;
+        background-color: rgb(88, 101, 242);
+        transition: background-color .17s ease,color .17s ease;
+      }
+      .button:hover {
+        background-color: rgb(71, 82, 196);
+      }
+      #steps {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        white-space: pre-wrap;
+        line-height: 1.5;
+      }
+      .dropdown {
+        display: inline-block;
+        margin-left: 5px;
+      }
+      .dropdown select {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #reset-button {
+        margin-left: 150px;
+        background-color: rgb(8, 150, 27);
+      }
+     
+    </style>
+  </head>
+  <body>
+    <br>
+    <h1>Calculator</h1>
+    <div class="container">
+      <form id="form">
+        <div class="row">
+          <label for="input-a" class="label">सदनिका दर</label>
+          <input id="input-a" class="textfield" type="text" placeholder="Flat Rate" required pattern="\d+(\.\d+)?" />
+        </div>
+        <div class="row">
+          <label for="input-b" class="label">जमीनीचा दर</label>
+          <input id="input-b" class="textfield" type="text" placeholder="Plot Rate" required pattern="\d+(\.\d+)?" />
+        </div>
+        <div class="row">
+          <label for="input-c" class="label">सदऩिका श्रेत्र</label>
+          <input id="input-c" class="textfield" type="text" placeholder="Flat Area" required pattern="\d+(\.\d+)?" />
+          <div class="dropdown">
+            <select id="area-unit">
+              <option value="sqm">sq meter</option>
+              <option value="sqft">sq feet</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <label for="input-d" class="label">मिळकत वय</label>
+          <input id="input-d" class="textfield" type="text" placeholder="Year" required pattern="\d{4}" />
+        </div>
+        <button id="calculate-button" class="button" type="submit">Calculate</button>
+        <button id="show-button" class="button" type="button">Show Steps</button>
+        <button id="reset-button" class="button" type="button">Reset</button>
+      </form>
+      <br>
+      <div id="result"></div>
+      <br>
+      <div id="roundoff"></div>
+      <div id="steps"></div>
+    </div>
+    <script>
+      const form = document.querySelector("#form");
+      const inputA = document.querySelector("#input-a");
+      const inputB = document.querySelector("#input-b");
+      const inputC = document.querySelector("#input-c");
+      const inputD = document.querySelector("#input-d");
+      const calculateButton = document.querySelector("#calculate-button");
+      const showButton = document.querySelector("#show-button");
+      const resetButton = document.querySelector("#reset-button");
+      const resultDiv = document.querySelector("#result");
+      const roundoffDiv = document.querySelector("#roundoff");
+
+      const stepsDiv = document.querySelector("#steps");
+      const areaUnitSelect = document.querySelector("#area-unit");
+
+      function calculate() {
+        const FlatRate = parseFloat(inputA.value);
+        const PlotRate = parseFloat(inputB.value);
+        const FlatArea = parseFloat(inputC.value);
+        const Year = parseFloat(inputD.value);
+
+        const GValue = FlatRate - PlotRate;
+        const YearFactor = (Year-1923)/100;
+        const AfterGValue = GValue * YearFactor;
+        let FinalResult = (AfterGValue + PlotRate) * FlatArea;
+
+        if (areaUnitSelect.value === "sqft") {
+          FinalResult *= 0.092903;
+        }
+
+        resultDiv.textContent = `Actual Result: ${FinalResult.toFixed(2)}`;
+        stepsDiv.textContent = ``;
+
+        return { FlatRate, PlotRate, FlatArea, Year,  YearFactor, GValue, AfterGValue, FinalResult };
+      }
+
+      function showSteps() {
+        const { FlatRate, PlotRate, FlatArea, Year, YearFactor, GValue, AfterGValue, FinalResult } = calculate();
+
+        let steps = `Steps:
+        Step 1: ${FlatRate} - ${PlotRate} = ${GValue}
+        Step 2: ${GValue} * ${YearFactor} = ${AfterGValue}
+        Step 3: (${AfterGValue} + ${PlotRate}) * ${FlatArea}`;
+
+        if (areaUnitSelect.value === "sqft") {
+          steps += ` * 0.092903`;
+        }
+
+        steps += ` = ${FinalResult.toFixed(2)}`;
+
+        stepsDiv.textContent = steps;
+      }
+
+      function reset(){
+        form.reset();
+        resultDiv.textContent = "";
+        stepsDiv.textContent = "";
+      }
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const isValid = form.checkValidity();
+        if (isValid) {
+          calculate();
+        }
+        form.classList.add("was-validated");
+      });
+
+      form.addEventListener("button", function (event) {
+        event.preventDefault();
+        const isValid = form.checkValidity();
+        if (isValid) {
+          showSteps();
+        }
+        form.classList.add("was-validated");
+      });
+
+      showButton.addEventListener("click", showSteps);
+      resetButton.addEventListener("click", reset);
+    </script>
+  </body>
+</html>
